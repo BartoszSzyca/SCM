@@ -16,3 +16,9 @@ class Food:
         self.expiration_date = expiration_date
         self.storage_conditions = storage_conditions
         self.description = description
+                     
+    def __repr__(self):
+        return (f"<Food(name={self.name}, quantities={self.quantities}, price={self.price:.2f}, "
+                f"macros={self.macros}, micros={self.micros}, purchase_date={self.purchase_date}, "
+                f"expiration_date={self.expiration_date}, storage_conditions={self.storage_conditions}, "
+                f"description={self.description})>")
