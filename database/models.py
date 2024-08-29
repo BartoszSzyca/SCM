@@ -9,7 +9,7 @@ class FoodModel(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    quantities = Column(JSON, nullable=False)  # Przechowuje ilości i jednostki jako JSON
+    quantities = Column(JSON, nullable=False)
     price = Column(Float, default=0.0)
     macros = Column(JSON)
     micros = Column(JSON)
