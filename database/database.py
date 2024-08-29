@@ -20,9 +20,15 @@ def add_food_to_db(food: Food):
         purchase_date=food.purchase_date,
         expiration_date=food.expiration_date,
         storage_conditions=food.storage_conditions,
-        description=food.description
-    )
+        description=food.description)
 
     session.add(food_model)
     session.commit()
     return food_model
+
+
+def fetch_all_foods():
+    foods = session.query(FoodModel).all()
+
+    for food in foods:
+        print(food)
