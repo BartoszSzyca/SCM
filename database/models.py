@@ -20,7 +20,13 @@ class FoodModel(Base):
 
     def __repr__(self):
         return (
-            f"<FoodModel(id={self.id}, name={self.name}, quantities={self.quantities}, "
-            f"price={self.price:.2f}, macros={self.macros}, micros={self.micros}, "
-            f"purchase_date={self.purchase_date}, expiration_date={self.expiration_date}, "
-            f"storage_conditions={self.storage_conditions}, description={self.description})>")
+            f"<FoodModel(id={self.id}, "
+            f"name={self.name}, "
+            f"quantities={self.quantities}, "
+            f"price={self.price:.2f}, "
+            f"macros={self.macros}, "
+            f"micros={self.micros}, "
+            f"purchase_date={self.purchase_date}, "
+            f"expiration_date={self.expiration_date}, "
+            f"storage_conditions={self.storage_conditions}, "
+            f"description={self.description})>")
