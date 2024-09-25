@@ -55,3 +55,5 @@ def fetch_all_foods():
 
     for food in foods:
         print(food)
+        
+    return foods
