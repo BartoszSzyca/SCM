@@ -32,7 +32,8 @@ class FoodModel(Base):
 class FridgeModel(Base):
     __tablename__ = 'fridge'
 
-    food_id = Column(Integer, ForeignKey('foods.food_id'), nullable=False)
+    food_id = Column(Integer, ForeignKey('foods.food_id'), primary_key=True,
+                     nullable=False)
     quantities = Column(Integer, nullable=False)
     purchase_date = Column(Date)
     expiration_date = Column(Date)
