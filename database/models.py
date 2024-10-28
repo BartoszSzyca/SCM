@@ -4,6 +4,21 @@ from sqlalchemy.orm import declarative_base, relationship
 Base = declarative_base()
 
 
+class Users(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String, unique=True, nullable=False)
+    user_name = Column(String, unique=True, nullable=False)
+    password = Column(String, nullable=False)
+
+    def __repr__(self):
+        return (
+            f"<id={self.id}, "
+            f"email={self.email}, "
+            f"user_name={self.user_name}, "
+            f"password={len(self.password)}-{"*"*len(self.password)}>")
+
 class FoodModel(Base):
     __tablename__ = 'foods'
 
@@ -32,7 +47,7 @@ class FoodModel(Base):
 class FridgeModel(Base):
     __tablename__ = 'fridge'
 
-    food_id = Column(Integer, ForeignKey('foods.food_id'), primary_key=True,
+    food_id = Column(Integer, ForeignKey('foods.food_id'), primary_key=True, 
                      nullable=False)
     quantities = Column(Integer, nullable=False)
     purchase_date = Column(Date)
