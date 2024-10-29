@@ -1,10 +1,7 @@
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QLineEdit, \
-    QPushButton, QHBoxLayout, QStackedWidget
+    QPushButton, QHBoxLayout, QStackedWidget, QMessageBox
 from PySide6.QtGui import QPixmap
-
-existing_username = "qwe"
-existing_password = "123"
-existing_email = "qwe@wp.pl"
+from core.auth_logic import log_in, register
 
 
 class StartScreen(QWidget):
@@ -64,13 +61,13 @@ class LoginScreen(QWidget):
         self.setLayout(v_layout_login)
 
     def login(self):
-        username = self.username_input_login.text()
+        login = self.username_input_login.text()
         password = self.password_input_login.text()
 
-        if username == existing_username and password == existing_password:
-            print("Login successful!")
+        if log_in(login, password):
+            QMessageBox.information(self, "Success", "Login Successful!")
         else:
-            print("Login failed!")
+            QMessageBox.warning(self, "Error", "Login failed!")
 
     def switch_to_register(self):
         self.parent.stack.setCurrentWidget(self.parent.register_screen)
@@ -79,7 +76,6 @@ class LoginScreen(QWidget):
 class RegisterScreen(QWidget):
     def __init__(self, parent):
         super().__init__()
-
         self.parent = parent
 
         email_label_register = QLabel("Email:")
@@ -105,7 +101,6 @@ class RegisterScreen(QWidget):
         v_layout_register.addWidget(self.username_input_register)
         v_layout_register.addWidget(password_label_register)
         v_layout_register.addWidget(self.password_input_register)
-        v_layout_register.addWidget(register_button)
 
         h_layout_register = QHBoxLayout()
         h_layout_register.addWidget(switch_to_login_button)
@@ -117,16 +112,15 @@ class RegisterScreen(QWidget):
 
     def register(self):
         email = self.email_input_register.text()
-        username = self.username_input_register.text()
+        login = self.username_input_register.text()
         password = self.password_input_register.text()
+        title, message, success = register(email, login, password)
 
-        if email != existing_email:
-            if username != existing_username:
-                print("Registration successful!")
-            else:
-                print("Username already exists!")
-        else:
-            print("Email already exists!")
+        if success:
+            QMessageBox.information(self, title, message)
+            self.switch_to_login()
+
+        QMessageBox.information(self, title, message)
 
     def switch_to_login(self):
         self.parent.stack.setCurrentWidget(self.parent.login_screen)
