@@ -1,35 +1,42 @@
+from database import session, ItemModel
+
+
 class ItemManager:
 
-    def __init__(self):
-        self.items = []
-
-    def add_item_to_database(self, item):
-        self.items.append(item)
+    def add_item_to_database(self, category, name, description):
+        existing_item = self.find_item_in_database(name)
+        if existing_item:
+            return "Item already exists"
+        new_item = ItemModel(
+            category=category,
+            name=name,
+            description=description,
+        )
+        session.add(new_item)
+        session.commit()
+        return "Item added successfully"
 
     def get_all_items_from_database(self):
-        return self.items
+        return session.query(ItemModel).all()
 
-    def remove_item_from_database(self, item):
-        if item in self.items:
-            return self.items.remove(item)
+    def remove_item_from_database(self, item_name):
+        item = self.find_item_in_database(item_name)
+        if item:
+            session.delete(item)
+            session.commit()
+            return "Item removed successfully"
+        return "Cannot remove item. item does not exist."
+
+    def find_item_in_database(self, item_name):
+        return session.query(ItemModel).filter_by(name=item_name).first()
+
+
+    def update_item_in_database(self, item_name, category, name, description):
+        item = self.find_item_in_database(item_name)
+        if item:
+            item.category = category
+            item.name = name
+            item.description = description
+            session.commit()
         else:
-            return "Cannot remove item. item does not exist."
-
-    def find_item_in_database(self, identifier):
-        index = 0
-        if isinstance(identifier, int):
-            for item in self.items:
-                if identifier == item["id"]:
-                    return self.items[index]
-                index += 1
-            return "item Not Found"
-        else:
-            for item in self.items:
-                if identifier == item["name"]:
-                    return self.items[index]
-                index += 1
-            return "item Not Found"
-
-    def update_item_in_database(self, item, edited_item):
-        index = self.items.index(item)
-        self.items[index] = edited_item
+            return "Item not found"
