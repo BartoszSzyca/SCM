@@ -1,59 +1,59 @@
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
-from database.models import Base, FoodModel
-from core.food import Food
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, JSON
 
-engine = create_engine('sqlite:///database/foods.db')
-Base.metadata.create_all(engine)
+Base = declarative_base()
 
+
+class ItemModel(Base):
+    __tablename__ = 'products'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, unique=True, nullable=False)
+    category = Column(String, nullable=False)
+    description = Column(String)
+
+    food_details = relationship('FoodDetailsModel',
+                                back_populates='product',
+                                uselist=False,
+                                cascade="all, delete-orphan")
+    product_details = relationship('ProductDetailsModel',
+                                   back_populates='product',
+                                   uselist=False,
+                                   cascade="all, delete-orphan")
+
+
+class FoodDetailsModel(Base):
+    __tablename__ = 'food_details'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
+    quantities = Column(JSON, nullable=False)
+    macros = Column(JSON, nullable=False)
+    micros = Column(JSON, nullable=False)
+    storage_conditions = Column(String)
+
+    product = relationship('ItemModel', back_populates='food_details')
+
+
+class ProductDetailsModel(Base):
+    __tablename__ = 'product_details'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
+    warranty_period = Column(String)
+    power_consumption = Column(String)
+
+    product = relationship('ItemModel', back_populates='product_details')
+
+
+class ShoppingListModel(Base):
+    __tablename__ = 'shopping_list'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    quantity = Column(Integer, default=1)
+
+
+engine = create_engine('sqlite:///database/database.db')
 Session = sessionmaker(bind=engine)
 session = Session()
 
 
-def add_food_to_db(food: Food):
-    existing_food = session.query(FoodModel).filter_by(name=food.name).first()
-
-    if existing_food:
-        print(f"Produkt o nazwie '{food.name}' już istnieje w bazie danych.")
-        choice = input("Nadpisać go? (Y/N)")
-        if choice.upper() == "Y":
-            update_food_in_db(food, existing_food)
-    else:
-        food_model = FoodModel(
-            name=food.name,
-            quantities=food.quantities,
-            price=food.price,
-            macros=food.macros,
-            micros=food.micros,
-            purchase_date=food.purchase_date,
-            expiration_date=food.expiration_date,
-            storage_conditions=food.storage_conditions,
-            description=food.description)
-
-        session.add(food_model)
-        session.commit()
-        return food_model
-
-
-def update_food_in_db(food: Food, existing_food):
-    existing_food.quantities = food.quantities
-    existing_food.price = food.price
-    existing_food.macros = food.macros
-    existing_food.micros = food.micros
-    existing_food.purchase_date = food.purchase_date
-    existing_food.expiration_date = food.expiration_date
-    existing_food.storage_conditions = food.storage_conditions
-    existing_food.description = food.description
-
-    session.commit()
-    print(f"Produkt o nazwie '{food.name}' został zaktualizowany.")
-    return existing_food
-
-
-def fetch_all_foods():
-    foods = session.query(FoodModel).all()
-
-    for food in foods:
-        print(food)
-        
-    return foods
+def initialize_db():
+    Base.metadata.create_all(engine)
