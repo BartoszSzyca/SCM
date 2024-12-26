@@ -1,10 +1,11 @@
-from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, \
-    QPushButton, QListWidget, QLineEdit, QSpinBox, QTabWidget, QHBoxLayout
-from SCM_testy.core.core import Core
-from SCM_testy.core.products_core import ProductCore
-from SCM_testy.database.database import initialize_db
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QPushButton, \
+    QListWidget, QLineEdit, QSpinBox, QTabWidget, QHBoxLayout
+from core.core import Core
+from database.database import initialize_db
+from core.item_manager import ItemManager
+from core.food_manager import FoodManager
+from core.product_manager import ProductManager
 
-# Inicjalizacja bazy danych
 initialize_db()
 
 
@@ -12,7 +13,9 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.core = Core()
-        self.product_core = ProductCore()
+        self.item_manager = ItemManager()
+        self.food_manager = FoodManager()
+        self.product_manager = ProductManager()
         self.setWindowTitle("Lista Zakupów")
         self.setGeometry(100, 100, 600, 400)
 
@@ -25,22 +28,16 @@ class MainWindow(QMainWindow):
     def init_shopping_list_tab(self):
         shopping_tab = QWidget()
         layout = QVBoxLayout()
-
-        # Tworzymy QHBoxLayout, aby umieścić obie listy obok siebie
         h_layout = QHBoxLayout()
 
-        # Lista zakupów po lewej
         self.list_widget = QListWidget()
         h_layout.addWidget(self.list_widget)
 
-        # Lista produktów po prawej
         self.shopping_list_product_widget = QListWidget()
         h_layout.addWidget(self.shopping_list_product_widget)
 
-        layout.addLayout(
-            h_layout)  # Dodajemy QHBoxLayout do głównego layoutu zakładki
+        layout.addLayout(h_layout)
 
-        # Pole do dodawania przedmiotów do listy zakupów
         self.input_field = QLineEdit()
         self.input_field.setPlaceholderText("Wpisz nazwę przedmiotu")
         layout.addWidget(self.input_field)
@@ -63,7 +60,6 @@ class MainWindow(QMainWindow):
         self.product_add_button.clicked.connect(self.add_item_from_product)
         layout.addWidget(self.product_add_button)
 
-        # Dodajemy przycisk do ukrywania/pokazywania prawej listy
         self.toggle_button = QPushButton("Ukryj/Pokaż Listę Produktów")
         self.toggle_button.clicked.connect(self.toggle_shopping_list)
         layout.addWidget(self.toggle_button)
@@ -90,10 +86,9 @@ class MainWindow(QMainWindow):
         self.product_description_input.setPlaceholderText("Opis produktu")
         layout.addWidget(self.product_description_input)
 
-        # Dodatkowe pola dla żywności
         self.food_quantities_input = QLineEdit()
-        self.food_quantities_input.setPlaceholderText(
-            "Ilości (JSON: {'kg': 1})")
+        self.food_quantities_input.setPlaceholderText("Ilości (JSON: {'kg': 1})"
+                                                      )
         layout.addWidget(self.food_quantities_input)
 
         self.food_macros_input = QLineEdit()
@@ -108,7 +103,6 @@ class MainWindow(QMainWindow):
         self.food_storage_input.setPlaceholderText("Warunki przechowywania")
         layout.addWidget(self.food_storage_input)
 
-        # Dodatkowe pola dla Product
         self.product_warranty_input = QLineEdit()
         self.product_warranty_input.setPlaceholderText("Okres gwarancji")
         layout.addWidget(self.product_warranty_input)
@@ -138,32 +132,31 @@ class MainWindow(QMainWindow):
 
         self.refresh_products()
         products_tab.setLayout(layout)
-        self.tabs.addTab(products_tab, "Produkty")
+        self.tabs.addTab(products_tab, "Baza Produktów")
 
     def toggle_shopping_list(self):
-        # Zmiana widoczności prawej listy
         current_visibility = self.shopping_list_product_widget.isVisible()
         self.shopping_list_product_widget.setVisible(not current_visibility)
 
     def refresh_list(self):
+        # shopinglist
         self.list_widget.clear()
         for name, quantity in self.core.get_items():
             self.list_widget.addItem(f"{name} (Ilość: {quantity})")
 
     def refresh_products(self):
-        # Odświeżanie listy produktów w zakładce "Produkty"
         self.product_list_widget.clear()
-        for product in self.product_core.get_products():
+        for product in self.item_manager.get_all_items_from_database():
             self.product_list_widget.addItem(
                 f"{product.name} - {product.description or 'Brak opisu'}")
 
-        # Odświeżanie listy dostępnych produktów w zakładce "Lista Zakupów"
         self.shopping_list_product_widget.clear()
-        for product in self.product_core.get_products():
+        for product in self.item_manager.get_all_items_from_database():
             self.shopping_list_product_widget.addItem(
                 f"{product.name} - {product.description or 'Brak opisu'}")
 
     def add_item(self):
+        # shopinglist
         name = self.input_field.text()
         quantity = self.quantity_input.value()
         if name:
@@ -171,7 +164,8 @@ class MainWindow(QMainWindow):
             self.refresh_list()
 
     def add_item_from_product(self):
-        selected_items = self.shopping_list_product_widget.selectedItems()  # Zmieniona nazwa zmiennej
+        # shopinglist
+        selected_items = self.shopping_list_product_widget.selectedItems()
         quantity = self.quantity_input.value()
         for item in selected_items:
             product_name = item.text().split(" - ")[0]
@@ -179,6 +173,7 @@ class MainWindow(QMainWindow):
             self.refresh_list()
 
     def remove_item(self):
+        # shopinglist
         selected_items = self.list_widget.selectedItems()
         for item in selected_items:
             name = item.text().split(" (")[0]
@@ -186,58 +181,59 @@ class MainWindow(QMainWindow):
             self.refresh_list()
 
     def add_product(self):
-        category = self.product_category_input.text()
-        name = self.product_name_input.text()
-        description = self.product_description_input.text()
-
-        if category == 'food':
-            quantities = eval(self.food_quantities_input.text())
-            macros = eval(self.food_macros_input.text())
-            micros = eval(self.food_micros_input.text())
-            storage_conditions = self.food_storage_input.text()
-            self.product_core.add_food(name, description, quantities, macros,
-                                       micros, storage_conditions)
-
-        elif category == 'product':
-            warranty_period = self.product_warranty_input.text()
-            power_consumption = self.product_power_input.text()
-            self.product_core.add_product(name, description, warranty_period,
-                                          power_consumption)
-
+        item_data = {"category": self.product_category_input.text(),
+                     "name": self.product_name_input.text(),
+                     "description": self.product_description_input.text(),
+                     "quantities": self.food_quantities_input.text(),
+                     "macros": self.food_macros_input.text(),
+                     "micros": self.food_micros_input.text(),
+                     "storage_conditions": self.food_storage_input.text(),
+                     "warranty_period": self.product_warranty_input.text(),
+                     "power_consumption": self.product_power_input.text()
+                     }
+        self.item_manager.add_item_to_database(**item_data)
         self.refresh_products()
 
     def delete_product(self):
         selected_items = self.product_list_widget.selectedItems()
         if selected_items:
             product_name = selected_items[0].text().split(" - ")[0]
-            self.product_core.delete_product(product_name)
-            self.refresh_products()  # Odśwież listę po usunięciu
+            self.item_manager.remove_item_from_database(product_name)
+            self.refresh_products()
 
     def edit_product(self):
         selected_items = self.product_list_widget.selectedItems()
         if selected_items:
             product_name = selected_items[0].text().split(" - ")[0]
-            product = self.product_core.find_product(product_name)
+            product = self.item_manager.find_item_in_database(product_name)
 
             if product:
                 self.product_name_input.setText(product.name)
                 self.product_description_input.setText(product.description)
 
                 if product.category == 'food':
-                    food_details = self.product_core.get_food_details(
+                    food_details = self.food_manager.find_food_details(
                         product.id)
                     if food_details:
+                        self.product_category_input.setText('food')
                         self.food_quantities_input.setText(
                             str(food_details.quantities))
                         self.food_macros_input.setText(str(food_details.macros))
                         self.food_micros_input.setText(str(food_details.micros))
                         self.food_storage_input.setText(
                             food_details.storage_conditions)
+                        self.product_warranty_input.setText("")
+                        self.product_power_input.setText("")
 
                 elif product.category == 'product':
-                    product_details = self.product_core.get_product_details(
+                    product_details = self.product_manager.find_product_details(
                         product.id)
                     if product_details:
+                        self.product_category_input.setText('product')
+                        self.food_quantities_input.setText("")
+                        self.food_macros_input.setText("")
+                        self.food_micros_input.setText("")
+                        self.food_storage_input.setText("")
                         self.product_warranty_input.setText(
                             product_details.warranty_period)
                         self.product_power_input.setText(
@@ -247,21 +243,24 @@ class MainWindow(QMainWindow):
         selected_items = self.product_list_widget.selectedItems()
         if selected_items:
             product_name = selected_items[0].text().split(" - ")[0]
-            product = self.product_core.find_product(product_name)
+            product = self.item_manager.find_item_in_database(product_name)
 
             if product:
                 new_name = self.product_name_input.text()
                 new_description = self.product_description_input.text()
+                new_category = self.product_description_input.text()
 
-                self.product_core.edit_product(product_name, new_name,
-                                               new_description)
+                self.item_manager.update_item_in_database(product_name,
+                                                          new_category,
+                                                          new_name,
+                                                          new_description)
 
                 if product.category == 'food':
                     quantities = eval(self.food_quantities_input.text())
                     macros = eval(self.food_macros_input.text())
                     micros = eval(self.food_micros_input.text())
                     storage_conditions = self.food_storage_input.text()
-                    self.product_core.update_food_details(product.id,
+                    self.food_manager.update_food_details(product.id,
                                                           quantities, macros,
                                                           micros,
                                                           storage_conditions)
@@ -269,15 +268,8 @@ class MainWindow(QMainWindow):
                 elif product.category == 'product':
                     warranty_period = self.product_warranty_input.text()
                     power_consumption = self.product_power_input.text()
-                    self.product_core.update_product_details(product.id,
-                                                             warranty_period,
-                                                             power_consumption)
+                    self.product_manager.update_product_details(product.id,
+                                                                warranty_period,
+                                                                power_consumption)
 
-                self.refresh_products()
-
-
-if __name__ == "__main__":
-    app = QApplication([])
-    window = MainWindow()
-    window.show()
-    app.exec()
+        self.refresh_products()
