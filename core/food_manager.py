@@ -1,4 +1,4 @@
-from database import FoodDetailsModel, session
+from database.database import FoodDetailsModel, session
 
 
 class FoodManager:
