@@ -136,4 +136,4 @@
 
 ## Licencja
 
-   Projekt jest dostępny na licencji MIT.
+   
