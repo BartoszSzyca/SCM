@@ -138,4 +138,4 @@ and organize recipes. Future plans include expanding functionality with a mobile
 
 ## License
 
-  The project is available under the MIT License.
+  
